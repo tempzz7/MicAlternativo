@@ -68,4 +68,27 @@ Derivados de `.planning/PROJECT.md` + `.planning/research/FEATURES.md` (table st
 
 ## Traceability
 
-(Preenchido pelo roadmap)
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| GRAV-01 | Phase 2 | Pending |
+| GRAV-02 | Phase 2 | Pending |
+| GRAV-03 | Phase 3 | Pending |
+| GRAV-04 | Phase 2 | Pending |
+| FONTE-01 | Phase 3 | Pending |
+| FONTE-02 | Phase 3 | Pending |
+| FONTE-03 | Phase 3 | Pending |
+| PERM-01 | Phase 2 | Pending |
+| PERM-02 | Phase 2 | Pending |
+| PLAY-01 | Phase 4 | Pending |
+| STOR-01 | Phase 2 | Pending |
+| STOR-02 | Phase 2 | Pending |
+| STOR-03 | Phase 4 | Pending |
+| SHARE-01 | Phase 4 | Pending |
+| ONBD-01 | Phase 3 | Pending |
+| DIST-01 | Phase 1 | Pending |
+| DIST-02 | Phase 1 | Pending |
+| DIST-03 | Phase 1 | Pending |
+| DIST-04 | Phase 5 | Pending |
+| DIST-05 | Phase 5 | Pending |
+
+**Coverage:** 20/20 v1 requirements mapped ✓
