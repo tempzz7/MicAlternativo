@@ -40,7 +40,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. The build fails loudly (non-zero exit) if `apksigner verify` or `zipalign -c` do not pass — a broken APK can never be silently produced
   3. The APK installs successfully via sideload on the real Android 14 target device (A15 5G)
   4. Every build uses the same permanent project keystore, so a second build can update-install over the first without uninstalling
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Walking Skeleton: fontes do app + scripts/build.sh (pipeline aapt2→javac→d8→zip→zipalign→apksigner) com gates e prova de mesma-keystore (DIST-01, DIST-02, DIST-03)
+- [ ] 01-02-PLAN.md — Checkpoint humano: sideload do v0.1.0 + update-install do v0.1.1 no Samsung A15 5G real (SC3, DIST-03)
 
 ### Phase 2: Permission & Core Record/Save Loop
 **Goal**: User grants mic permission and can record and save audio that reliably appears in the Files app, with graceful error handling
