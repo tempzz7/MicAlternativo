@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
-current_phase: 1
-current_phase_name: Build Pipeline & Signing
-status: planning
+current_phase: 01
+current_phase_name: build-pipeline-signing
+status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-07-28T22:09:23.359Z"
+last_updated: "2026-07-28T22:42:30.538Z"
 last_activity: 2026-07-28
-last_activity_desc: Roadmap created from v1 requirements
+last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-28)
 
 **Core value:** Uma pessoa com o microfone principal quebrado consegue gravar e enviar áudios pelo WhatsApp usando o microfone que ainda funciona — sem root, sem trocar de aparelho.
-**Current focus:** Phase 1 — Build Pipeline & Signing
+**Current focus:** Phase 01 — build-pipeline-signing
 
 ## Current Position
 
-Phase: 1 of 5 (Build Pipeline & Signing)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-07-28 — Roadmap created from v1 requirements
+Phase: 01 (build-pipeline-signing) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-07-28 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P01 | 4 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ Recent decisions affecting current work:
 - Roadmap: No-Gradle build pipeline (Phase 1) sequenced first — highest infra uncertainty, zero app-logic dependency, unblocks every later phase's test loop.
 - Roadmap: Source selection (Phase 3) deliberately built after a proven record/save loop (Phase 2) with a single hardcoded default (CAMCORDER), to isolate AudioSource-routing uncertainty from storage/permission correctness.
 - Roadmap: Distribution hardening (Phase 5) is last since packaging is orthogonal to app correctness, but the release keystore is generated in Phase 1 so all test builds are signed with the final key from day one.
+- [Phase 01]: 01-01: gate de assinatura aceita v2 OU v3 true — minSdk 29 emite v3-only por design (Pitfall 1)
+- [Phase 01]: 01-01: aapt2 compile omitido — link direto do manifest basta (verificado)
+- [Phase 01]: 01-01: --verify-only dispensa keystore; aviso (não falha) se permissões de segredos > 600
 
 ### Pending Todos
 
@@ -86,6 +90,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-28T22:09:23.355Z
+Last session: 2026-07-28T22:41:51.036Z
 Stopped at: Phase 1 context gathered
 Resume file: .planning/phases/01-build-pipeline-signing/01-CONTEXT.md

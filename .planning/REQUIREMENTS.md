@@ -42,9 +42,9 @@ Derivados de `.planning/PROJECT.md` + `.planning/research/FEATURES.md` (table st
 
 ### Build & Distribuição (DIST)
 
-- [ ] **DIST-01**: `scripts/build.sh` produz o APK de forma reproduzível sem Gradle (aapt2 → javac → d8 → empacotar → zipalign → apksigner), com um comando
-- [ ] **DIST-02**: O build tem gates automáticos: `apksigner verify` (v2+ presente) e `zipalign -c` passam ou o build falha — nunca gerar APK que "não instala" no Android 11+
-- [ ] **DIST-03**: APK é assinado com a keystore permanente do projeto (mesma assinatura em todos os releases, permitindo updates por cima)
+- [x] **DIST-01**: `scripts/build.sh` produz o APK de forma reproduzível sem Gradle (aapt2 → javac → d8 → empacotar → zipalign → apksigner), com um comando
+- [x] **DIST-02**: O build tem gates automáticos: `apksigner verify` (v2+ presente) e `zipalign -c` passam ou o build falha — nunca gerar APK que "não instala" no Android 11+
+- [x] **DIST-03**: APK é assinado com a keystore permanente do projeto (mesma assinatura em todos os releases, permitindo updates por cima)
 - [ ] **DIST-04**: Guia de instalação em PT-BR (`INSTALAR.md`) cobre sideload no One UI 6: fontes desconhecidas por app, Auto Blocker da Samsung e aviso do Play Protect
 - [ ] **DIST-05**: APK final fica disponível para o usuário baixar (artefato no repo/Release), com nome versionado (ex.: `MicAlternativo-v1.0.0.apk`)
 
@@ -85,9 +85,9 @@ Derivados de `.planning/PROJECT.md` + `.planning/research/FEATURES.md` (table st
 | STOR-03 | Phase 4 | Pending |
 | SHARE-01 | Phase 4 | Pending |
 | ONBD-01 | Phase 3 | Pending |
-| DIST-01 | Phase 1 | Pending |
-| DIST-02 | Phase 1 | Pending |
-| DIST-03 | Phase 1 | Pending |
+| DIST-01 | Phase 1 | Complete |
+| DIST-02 | Phase 1 | Complete |
+| DIST-03 | Phase 1 | Complete |
 | DIST-04 | Phase 5 | Pending |
 | DIST-05 | Phase 5 | Pending |
 
