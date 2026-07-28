@@ -441,15 +441,15 @@ Note: `android:exported="true"` is mandatory on targetSdk 31+ for activities wit
 
 No other assumptions — all pipeline behavior claims were executed locally this session.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does the APK actually install and open on the physical A15 5G?**
+1. **Does the APK actually install and open on the physical A15 5G?** — RESOLVED: `checkpoint:human-verify` task in plan 01-02 (install v0.1.0, open, update-install v0.1.1 over it — proves SC3 + DIST-03 in one pass).
    - What we know: all machine-checkable install-readiness signals pass (v3 signature, alignment, badging, minSdk/targetSdk correct).
    - What's unclear: only a real sideload proves success criterion 3; no device is attached in this environment.
    - Recommendation: plan a `checkpoint:human-verify` task — install build #1, open app, then bump versionCode, rebuild, and update-install over it (proves DIST-03's same-key update path in one pass).
 
-2. **Should `release.jks` file permissions be tightened?**
-   - What we know: `keystore.env` is 600 (correct per D-01), but `release.jks` is currently **664 (group/world-readable)** — observed via `ls -la`.
+2. **Should `release.jks` file permissions be tightened?** — RESOLVED: `release.jks` already tightened to 600 on disk by the orchestrator; additionally build.sh preflight warns when keystore perms > 600 (plan 01-01 Task 2).
+   - What we know: `keystore.env` is 600 (correct per D-01); `release.jks` was 664 when observed and has since been chmod 600.
    - Recommendation: add `chmod 600 "$KEYSTORE_PATH"` as a one-time hardening step (or a preflight warning in build.sh). Low effort, closes a real gap versus D-01's intent.
 
 ## Environment Availability
