@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Sidemic — marca.
+    Construção: a cápsula do microfone é deslocada do eixo (side mic) e o arco do
+    suporte se fecha por baixo dela, desenhando um S implícito. Três traços de
+    nível à esquerda marcam o eixo abandonado — o microfone que falhou.
+    Grade: 512, centro óptico em x=272 para compensar o peso dos traços à esquerda.
+  -->
+  <defs>
+    <linearGradient id="capsule" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B8FFE4"/>
+      <stop offset="0.45" stop-color="#3DDCA4"/>
+      <stop offset="1" stop-color="#22A87A"/>
+    </linearGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3DDCA4"/>
+      <stop offset="1" stop-color="#178C64"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#141A1E"/>
+      <stop offset="1" stop-color="#080B0D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Campo -->
+  <rect width="512" height="512" rx="112" fill="url(#field)"/>
+
+  <!-- Traços de nível à esquerda e à direita: a captura acontecendo pelo lado -->
+  <g fill="#3DDCA4">
+    <rect x="96"  y="238" width="18" height="40"  rx="9" opacity="0.30"/>
+    <rect x="132" y="208" width="18" height="100" rx="9" opacity="0.55"/>
+    <rect x="168" y="226" width="18" height="64"  rx="9" opacity="0.80"/>
+    <rect x="416" y="238" width="18" height="40"  rx="9" opacity="0.30"/>
+    <rect x="382" y="222" width="18" height="72"  rx="9" opacity="0.55"/>
+  </g>
+
+  <!-- Arco do suporte: semicírculo aberto para cima, abraçando a cápsula -->
+  <path d="M 214 250 A 76 76 0 0 0 366 250"
+        fill="none" stroke="url(#arc)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- Haste e base -->
+  <rect x="277" y="316" width="26" height="70" rx="13" fill="#22A87A"/>
+  <rect x="232" y="374" width="116" height="26" rx="13" fill="#3DDCA4"/>
+
+  <!-- Cápsula do microfone -->
+  <rect x="254" y="112" width="72" height="182" rx="36" fill="url(#capsule)"/>
+  <!-- Grelha da cápsula: três frisos, o vocabulário do medidor repetido -->
+  <g fill="#080B0D" opacity="0.22">
+    <rect x="270" y="150" width="40" height="9" rx="4.5"/>
+    <rect x="270" y="176" width="40" height="9" rx="4.5"/>
+    <rect x="270" y="202" width="40" height="9" rx="4.5"/>
+  </g>
+  <!-- Realce especular na borda esquerda da cápsula -->
+  <path d="M 268 148 A 22 22 0 0 1 290 126" fill="none" stroke="#DFFFF2"
+        stroke-width="7" stroke-linecap="round" opacity="0.65"/>
+</svg>

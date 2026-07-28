@@ -78,12 +78,16 @@ parse_version() {
 
 # ── Estágios do pipeline, ordem FIXA de D-07 ────────────────────────────────
 stage_link() {
-    # RESEARCH Q1 — manifest-only: SEM aapt2 compile (verificado desnecessário)
+    # Com recursos (ícone): aapt2 compile --dir gera o .flat, depois link.
+    # RESEARCH Q1 previa manifest-only; a marca própria trouxe res/ ao projeto.
+    "$BT/aapt2" compile --dir app/src/main/res -o build/res.zip
     "$BT/aapt2" link \
         --manifest app/src/main/AndroidManifest.xml \
         -I "$ANDROID_JAR" \
         --version-code "$VERSION_CODE" \
         --version-name "$VERSION_NAME" \
+        --java build/gen \
+        build/res.zip \
         -o build/base.apk
 }
 
@@ -98,7 +102,7 @@ stage_compile() {
         -encoding UTF-8 \
         -Xlint:-options \
         -d build/obj \
-        $(find app/src/main/java -name '*.java')
+        $(find app/src/main/java build/gen -name '*.java')
 }
 
 stage_dex() {
@@ -189,7 +193,7 @@ main() {
 
     # Limpar intermediários e preparar diretórios (Pitfall 2)
     rm -rf build
-    mkdir -p build/obj build/dex dist
+    mkdir -p build/obj build/dex build/gen dist
 
     stage_link
     stage_compile
