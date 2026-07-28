@@ -23,7 +23,7 @@ Blocker and Play Protect friction, and a versioned APK artifact ready to hand to
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Build Pipeline & Signing** - A signed, installable "Hello World" APK is produced by one script, with automated gates that guarantee it installs on Android 14
+- [x] **Phase 1: Build Pipeline & Signing** - A signed, installable "Hello World" APK is produced by one script, with automated gates that guarantee it installs on Android 14 (completed 2026-07-28)
 - [ ] **Phase 2: Permission & Core Record/Save Loop** - User grants mic permission and can record and save audio that reliably appears in the Files app, with graceful error handling
 - [ ] **Phase 3: Audio Source Selection & Onboarding** - User can switch between mic sources with PT-BR labels, see a level meter to confirm capture, and understand what the app does/doesn't fix
 - [ ] **Phase 4: Playback, History & Share to WhatsApp** - User can preview any recording, browse past recordings, and send one to WhatsApp as a playable audio message
@@ -44,12 +44,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The APK installs successfully via sideload on the real Android 14 target device (A15 5G)
   4. Every build uses the same permanent project keystore, so a second build can update-install over the first without uninstalling
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 
 - [x] 01-01-PLAN.md — Walking Skeleton: fontes do app + scripts/build.sh (pipeline aapt2→javac→d8→zip→zipalign→apksigner) com gates e prova de mesma-keystore (DIST-01, DIST-02, DIST-03)
-- [ ] 01-02-PLAN.md — Checkpoint humano: sideload do v0.1.0 + update-install do v0.1.1 no Samsung A15 5G real (SC3, DIST-03)
+- [x] 01-02-PLAN.md — Checkpoint humano: sideload do v0.1.0 + update-install do v0.1.1 no Samsung A15 5G real (SC3, DIST-03)
 
 ### Phase 2: Permission & Core Record/Save Loop
 
@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Build Pipeline & Signing | 1/2 | In Progress|  |
+| 1. Build Pipeline & Signing | 2/2 | Complete   | 2026-07-28 |
 | 2. Permission & Core Record/Save Loop | 0/? | Not started | - |
 | 3. Audio Source Selection & Onboarding | 0/? | Not started | - |
 | 4. Playback, History & Share to WhatsApp | 0/? | Not started | - |

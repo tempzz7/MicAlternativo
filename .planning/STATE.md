@@ -4,17 +4,17 @@ milestone: v1.0.0
 milestone_name: milestone
 current_phase: 01
 current_phase_name: build-pipeline-signing
-status: executing
+status: verifying
 stopped_at: Phase 1 context gathered
-last_updated: "2026-07-28T22:42:30.538Z"
+last_updated: "2026-07-28T23:09:24.295Z"
 last_activity: 2026-07-28
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 20
 ---
 
 # Project State
@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-07-28)
 
 ## Current Position
 
-Phase: 01 (build-pipeline-signing) — EXECUTING
+Phase: 01 (build-pipeline-signing) — VERIFYING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-28 — Phase 01 execution started
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 4 min | 3 tasks | 5 files |
+| Phase 01 P02 | 2 min + checkpoint humano | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,7 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-01: gate de assinatura aceita v2 OU v3 true — minSdk 29 emite v3-only por design (Pitfall 1)
 - [Phase 01]: 01-01: aapt2 compile omitido — link direto do manifest basta (verificado)
 - [Phase 01]: 01-01: --verify-only dispensa keystore; aviso (não falha) se permissões de segredos > 600
+- [Phase 01]: 01-02: GitHub Release (tempzz7/MicAlternativo v0.1.1) virou canal de distribuição de fato — usuário instalou direto da Release; rota natural para Fase 5 (DIST-05)
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-28T22:41:51.036Z
+Last session: 2026-07-28T23:08:56.436Z
 Stopped at: Phase 1 context gathered
 Resume file: .planning/phases/01-build-pipeline-signing/01-CONTEXT.md
