@@ -1,0 +1,20 @@
+# Build outputs
+build/
+dist/
+*.apk
+*.apk.idsig
+*.dex
+
+# Keystore secrets (a keystore de release NUNCA vai para o repo)
+*.jks
+*.keystore
+
+# SDK local
+android-sdk/
+local.properties
+
+# Editor/OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
