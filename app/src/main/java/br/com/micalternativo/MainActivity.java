@@ -47,6 +47,8 @@ import java.util.Locale;
  */
 public class MainActivity extends Activity {
 
+    public static final String ACTION_RECORD_NOW = "br.com.micalternativo.action.RECORD";
+
     private static final int REQ_RECORD_AUDIO = 1;
     private static final String PREFS = "micalternativo";
     private static final String PREF_SOURCE = "audio_source";
@@ -90,6 +92,7 @@ public class MainActivity extends Activity {
     private Button recordBtn;
     private Button playBtn;
     private Button shareBtn;
+    private Button otherShareBtn;
     private RadioGroup sourceGroup;
     private LinearLayout listBox;
 
@@ -288,12 +291,19 @@ public class MainActivity extends Activity {
         });
         sendCard.addView(playBtn, wrap(dp(10)));
 
-        shareBtn = pillButton("Enviar no WhatsApp e mais", true);
+        shareBtn = pillButton("Enviar no WhatsApp", true);
         shareBtn.setEnabled(false);
         shareBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { share(lastRecordingUri); }
         });
         sendCard.addView(shareBtn, wrap(dp(8)));
+
+        otherShareBtn = pillButton("Enviar por outro app", false);
+        otherShareBtn.setEnabled(false);
+        otherShareBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { shareGeneric(lastRecordingUri); }
+        });
+        sendCard.addView(otherShareBtn, wrap(dp(8)));
 
         root.addView(sendCard, wrap(dp(14)));
 
@@ -328,6 +338,47 @@ public class MainActivity extends Activity {
         setContentView(scroll);
 
         refreshList();
+        publishRecordShortcut();
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    /** Atalho do launcher (segurar o ícone) e do bloco rápido: abre já gravando. */
+    private void handleIntent(Intent intent) {
+        if (intent != null && ACTION_RECORD_NOW.equals(intent.getAction()) && !recording) {
+            handler.postDelayed(new Runnable() {
+                @Override public void run() { if (!recording) ensurePermissionThenRecord(); }
+            }, 150);
+        }
+    }
+
+    private void publishRecordShortcut() {
+        try {
+            android.content.pm.ShortcutManager sm = getSystemService(android.content.pm.ShortcutManager.class);
+            if (sm == null) return;
+            Intent i = new Intent(this, MainActivity.class);
+            i.setAction(ACTION_RECORD_NOW);
+            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(108, 108,
+                    android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas cv = new android.graphics.Canvas(bmp);
+            android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            paint.setColor(ACCENT);
+            cv.drawCircle(54, 54, 50, paint);
+            paint.setColor(Color.parseColor("#06130F"));
+            cv.drawCircle(54, 54, 20, paint);
+            android.content.pm.ShortcutInfo si = new android.content.pm.ShortcutInfo.Builder(this, "record_now")
+                    .setShortLabel("Gravar agora")
+                    .setLongLabel("Gravar agora com o mic que funciona")
+                    .setIcon(android.graphics.drawable.Icon.createWithBitmap(bmp))
+                    .setIntent(i)
+                    .build();
+            sm.setDynamicShortcuts(java.util.Collections.singletonList(si));
+        } catch (Exception ignored) { }
     }
 
     // ---------- Permissão ----------
@@ -429,6 +480,7 @@ public class MainActivity extends Activity {
         statusText.setTextColor(ACCENT);
         playBtn.setEnabled(false);
         shareBtn.setEnabled(false);
+        otherShareBtn.setEnabled(false);
         handler.post(meterTick);
     }
 
@@ -454,6 +506,7 @@ public class MainActivity extends Activity {
             statusText.setTextColor(ACCENT);
             playBtn.setEnabled(true);
             shareBtn.setEnabled(true);
+            otherShareBtn.setEnabled(true);
         } else {
             if (currentUri != null) { try { cr.delete(currentUri, null, null); } catch (Exception ignored) {} }
             if (!ok) { statusText.setText("Gravação muito curta — tente de novo."); statusText.setTextColor(RED); }
@@ -507,6 +560,24 @@ public class MainActivity extends Activity {
     // ---------- Compartilhar ----------
 
     private void share(Uri uri) {
+        if (uri == null) return;
+        // Direto no WhatsApp (cai na escolha de contato); fallback: chooser padrão
+        String[] waPkgs = {"com.whatsapp", "com.whatsapp.w4b"};
+        for (String pkg : waPkgs) {
+            try {
+                Intent wa = new Intent(Intent.ACTION_SEND);
+                wa.setType("audio/mp4");
+                wa.putExtra(Intent.EXTRA_STREAM, uri);
+                wa.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                wa.setPackage(pkg);
+                startActivity(wa);
+                return;
+            } catch (Exception ignored) { }
+        }
+        shareGeneric(uri);
+    }
+
+    private void shareGeneric(Uri uri) {
         if (uri == null) return;
         Intent send = new Intent(Intent.ACTION_SEND);
         send.setType("audio/mp4");
