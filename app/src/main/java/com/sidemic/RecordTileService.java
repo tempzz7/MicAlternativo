@@ -1,4 +1,4 @@
-package br.com.micalternativo;
+package com.sidemic;
 
 import android.app.PendingIntent;
 import android.content.Intent;

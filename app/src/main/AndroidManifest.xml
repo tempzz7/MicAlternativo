@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="br.com.micalternativo">
+    package="com.sidemic">
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <queries>
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
+        <package android:name="com.instagram.android" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="org.telegram.messenger.web" />
     </queries>
-    <application android:label="MicAlternativo"
+    <application android:label="Sidemic"
         android:theme="@android:style/Theme.Material.NoActionBar">
         <activity android:name=".MainActivity" android:exported="true"
             android:launchMode="singleTop">
@@ -17,7 +20,7 @@
             </intent-filter>
         </activity>
         <service android:name=".RecordTileService"
-            android:label="Gravar áudio (MicAlternativo)"
+            android:label="Sidemic — capturar"
             android:icon="@android:drawable/ic_btn_speak_now"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# build.sh — pipeline de build completo do MicAlternativo (DIST-01/02/03).
+# build.sh — pipeline de build completo do Sidemic (DIST-01/02/03).
 #
-# Um único comando produz dist/MicAlternativo-v{versionName}.apk assinado:
+# Um único comando produz dist/Sidemic-v{versionName}.apk assinado:
 #   aapt2 link -> javac -> d8 -> zip -j -> zipalign -> apksigner + gates.
 #
 # ATENÇÃO (D-02): a keystore em KEYSTORE_PATH é a identidade permanente do app.
@@ -104,7 +104,7 @@ stage_compile() {
 stage_dex() {
     # RESEARCH Q3 — d8 NÃO cria o diretório de saída (Pitfall 2).
     # Classes vão num .jar (nomes com $ de classes anônimas passam sem risco).
-    (cd build/obj && jar cf ../classes.jar br)
+    (cd build/obj && jar cf ../classes.jar .)
     "$D8" --release --min-api 29 --lib "$ANDROID_JAR" \
         --output build/dex \
         build/classes.jar
@@ -133,7 +133,7 @@ stage_sign() {
         --ks-key-alias "$ALIAS" \
         --ks-pass env:STOREPASS \
         --min-sdk-version 29 \
-        --out "dist/MicAlternativo-v${VERSION_NAME}.apk" \
+        --out "dist/Sidemic-v${VERSION_NAME}.apk" \
         build/aligned.apk
 }
 
@@ -198,7 +198,7 @@ main() {
     stage_align
     stage_sign
 
-    local apk="dist/MicAlternativo-v${VERSION_NAME}.apk"
+    local apk="dist/Sidemic-v${VERSION_NAME}.apk"
     run_gates "$apk"
     print_summary "$apk"
     echo "OK: build completo — $apk"

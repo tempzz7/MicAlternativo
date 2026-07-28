@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_build.sh — harness E2E independente do MicAlternativo.
+# test_build.sh — harness E2E independente do Sidemic.
 #
 # Contrato do build (DIST-01/02/03): roda scripts/build.sh e depois re-verifica,
 # POR FORA e de forma independente, os gates de assinatura, alinhamento, badging
@@ -31,7 +31,7 @@ fi
 # (d) parse CRLF-safe da versão (RESEARCH Q7 / Pitfall 7)
 VERSION_NAME=$(grep -E '^versionName=' version.properties | head -1 | cut -d= -f2 | tr -d '[:space:]')
 [ -n "$VERSION_NAME" ] || fail "versionName vazio em version.properties"
-APK="dist/MicAlternativo-v${VERSION_NAME}.apk"
+APK="dist/Sidemic-v${VERSION_NAME}.apk"
 [ -f "$APK" ] || fail "artefato final $APK não existe"
 
 # (e) Gate independente 1: assinatura — captura em variável, NUNCA em pipe
@@ -47,11 +47,11 @@ echo "$verify_out" | grep -Eq '(v2 scheme \(APK Signature Scheme v2\): true|v3 s
 
 # (g) Badging: identidade do APK (D-05, D-06)
 badging=$("$BT/aapt2" dump badging "$APK") || fail "aapt2 dump badging falhou em $APK"
-echo "$badging" | grep -q "name='br.com.micalternativo'" || fail "badging sem package br.com.micalternativo"
+echo "$badging" | grep -q "name='com.sidemic'" || fail "badging sem package com.sidemic"
 echo "$badging" | grep -q "sdkVersion:'29'" || fail "badging sem sdkVersion 29"
 echo "$badging" | grep -q "targetSdkVersion:'34'" || fail "badging sem targetSdkVersion 34"
 echo "$badging" | grep -q "android.permission.RECORD_AUDIO" || fail "badging sem permissão RECORD_AUDIO"
-echo "$badging" | grep -q "launchable-activity: name='br.com.micalternativo.MainActivity'" \
+echo "$badging" | grep -q "launchable-activity: name='com.sidemic.MainActivity'" \
     || fail "badging sem launchable-activity MainActivity"
 
 # (h) Certificado permanente (DIST-03): digest deve ser o do projeto
