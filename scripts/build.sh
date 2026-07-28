@@ -35,7 +35,14 @@ die() {
 # runs futuros é o SDK ter sumido; nomear exatamente o que falta e como corrigir.
 preflight_tools() {
     [ -x "$BT/aapt2" ]     || die "aapt2 não encontrado em $BT/aapt2 — defina ANDROID_HOME apontando para um SDK com build-tools 34.0.0"
-    [ -f "$BT/d8" ]        || die "d8 não encontrado em $BT/d8 — defina ANDROID_HOME apontando para um SDK com build-tools 34.0.0"
+    # d8: o do build-tools 34.0.0 crasha (NPE) ao parsear classes anônimas —
+    # preferir o d8 do build-tools 35.0.0 quando instalado (mesmo minSdk/target).
+    if [ -f "$ANDROID_HOME/build-tools/35.0.0/d8" ]; then
+        D8="$ANDROID_HOME/build-tools/35.0.0/d8"
+    else
+        D8="$BT/d8"
+    fi
+    [ -f "$D8" ]           || die "d8 não encontrado — instale build-tools 35.0.0 (recomendado) ou 34.0.0 no SDK"
     [ -x "$BT/zipalign" ]  || die "zipalign não encontrado em $BT/zipalign — defina ANDROID_HOME apontando para um SDK com build-tools 34.0.0"
     [ -f "$BT/apksigner" ] || die "apksigner não encontrado em $BT/apksigner — defina ANDROID_HOME apontando para um SDK com build-tools 34.0.0"
     [ -f "$ANDROID_JAR" ]  || die "android.jar não encontrado em $ANDROID_JAR — instale a platform android-34 no SDK"
@@ -81,7 +88,9 @@ stage_link() {
 }
 
 stage_compile() {
-    # RESEARCH Q2 — NUNCA combinar --release 8 com bootclasspath (Pitfall 4)
+    # RESEARCH Q2 — NUNCA combinar --release 8 com bootclasspath (Pitfall 4).
+    # Fonte não usa lambdas/method refs: o android.jar no bootclasspath não tem
+    # LambdaMetafactory completo, e o d8 34.0.0 crasha ao desugarar invokedynamic.
     javac \
         -source 8 -target 8 \
         -bootclasspath "$ANDROID_JAR" \
@@ -93,10 +102,12 @@ stage_compile() {
 }
 
 stage_dex() {
-    # RESEARCH Q3 — d8 NÃO cria o diretório de saída (Pitfall 2)
-    "$BT/d8" --release --min-api 29 --lib "$ANDROID_JAR" \
+    # RESEARCH Q3 — d8 NÃO cria o diretório de saída (Pitfall 2).
+    # Classes vão num .jar (nomes com $ de classes anônimas passam sem risco).
+    (cd build/obj && jar cf ../classes.jar br)
+    "$D8" --release --min-api 29 --lib "$ANDROID_JAR" \
         --output build/dex \
-        $(find build/obj -name '*.class')
+        build/classes.jar
 }
 
 stage_pack() {
