@@ -86,6 +86,10 @@ public class StudioActivity extends Activity {
 
     private int presetIndex = 0;
     private double bassDb = 0, midDb = 0, trebleDb = 0;
+    private double tuneStrength = 0;   // 0 = desligado; 1 = correção travada
+    private int tuneScale = NativeAudio.SCALE_MINOR;
+    private int tuneKey = 0;           // 0 = C
+    private Button scaleBtn, keyBtn;
     private double beatGain = 0.55, voiceGain = 1.0;
 
     private TextView voiceSummary, beatSummary, renderStatus;
@@ -287,16 +291,59 @@ public class StudioActivity extends Activity {
         });
         root.addView(previewBtn, lp(10));
 
-        // ── 3. EQ ──
+        // ── 3. Autotune ──
         root.addView(rule(), thin(28));
-        root.addView(sectionLabel("3 · Equaliser"), lp(24));
+        root.addView(sectionLabel("3 · Pitch correction"), lp(24));
+
+        TextView tuneHint = new TextView(this);
+        tuneHint.setText(NativeAudio.isAvailable()
+                ? "Frame-by-frame correction: every note snaps to the scale. Push it to 100% for the hard, robotic sound."
+                : "Native engine unavailable on this device — falling back to average-pitch correction.");
+        tuneHint.setTextSize(12);
+        tuneHint.setTextColor(MUTED);
+        root.addView(tuneHint, lp(8));
+
+        root.addView(tuneSlider(), lp(12));
+
+        LinearLayout tuneRow = new LinearLayout(this);
+        tuneRow.setOrientation(LinearLayout.HORIZONTAL);
+
+        scaleBtn = ghost("Scale · Minor");
+        scaleBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                tuneScale = (tuneScale + 1) % NativeAudio.SCALE_NAMES.length;
+                scaleBtn.setText("Scale · " + NativeAudio.SCALE_NAMES[tuneScale]);
+            }
+        });
+        LinearLayout.LayoutParams halfL = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        halfL.rightMargin = dp(6);
+        tuneRow.addView(scaleBtn, halfL);
+
+        keyBtn = ghost("Key · C");
+        keyBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                tuneKey = (tuneKey + 1) % 12;
+                keyBtn.setText("Key · " + NativeAudio.KEY_NAMES[tuneKey]);
+            }
+        });
+        LinearLayout.LayoutParams halfR = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        halfR.leftMargin = dp(6);
+        tuneRow.addView(keyBtn, halfR);
+
+        root.addView(tuneRow, lp(10));
+
+        // ── 4. EQ ──
+        root.addView(rule(), thin(28));
+        root.addView(sectionLabel("4 · Equaliser"), lp(24));
         root.addView(eqSlider("Bass", 0), lp(12));
         root.addView(eqSlider("Mid", 1), lp(10));
         root.addView(eqSlider("Treble", 2), lp(10));
 
         // ── 4. Beat ──
         root.addView(rule(), thin(28));
-        root.addView(sectionLabel("4 · Beat"), lp(24));
+        root.addView(sectionLabel("5 · Beat"), lp(24));
         beatSummary = summaryBox("No beat — vocal only");
         root.addView(beatSummary, lp(10));
 
@@ -336,7 +383,7 @@ public class StudioActivity extends Activity {
 
         // ── 5. Render ──
         root.addView(rule(), thin(28));
-        root.addView(sectionLabel("5 · Render"), lp(24));
+        root.addView(sectionLabel("6 · Render"), lp(24));
 
         renderStatus = summaryBox("Pick a take, choose a preset, then render");
         root.addView(renderStatus, lp(10));
@@ -416,6 +463,48 @@ public class StudioActivity extends Activity {
         });
         box.addView(sb);
         return box;
+    }
+
+    private View tuneSlider() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+
+        final TextView label = new TextView(this);
+        label.setText("Correction  off");
+        label.setTextSize(13);
+        label.setTextColor(PAPER);
+        box.addView(label);
+
+        SeekBar sb = new SeekBar(this);
+        sb.setMax(100);
+        sb.setProgress(0);
+        sb.getProgressDrawable().setTint(MINT);
+        sb.getThumb().setTint(MINT);
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                tuneStrength = p / 100.0;
+                label.setText(p == 0 ? "Correction  off" : "Correction  " + p + "%");
+            }
+            @Override public void onStartTrackingTouch(SeekBar s) { }
+            @Override public void onStopTrackingTouch(SeekBar s) { }
+        });
+        box.addView(sb);
+        return box;
+    }
+
+    /**
+     * Cadeia comum de processamento — usada pelo preview e pelo render, para
+     * que o que se ouve na prévia seja exatamente o que sai no arquivo.
+     */
+    private short[] processChain(short[] samples, int rate) {
+        short[] pcm = Effects.applyPreset(samples, rate, presetIndex);
+        if (tuneStrength > 0.01) {
+            pcm = NativeAudio.isAvailable()
+                    ? NativeAudio.autoTune(pcm, rate, (float) tuneStrength, tuneScale, tuneKey)
+                    : Effects.autoTune(pcm, rate, tuneStrength);
+        }
+        Effects.equalize(pcm, rate, bassDb, midDb, trebleDb);
+        return pcm;
     }
 
     private View beatMixSlider() {
@@ -878,8 +967,7 @@ public class StudioActivity extends Activity {
                 Uri out = null;
                 try {
                     AudioEngine.Clip voice = AudioEngine.decode(StudioActivity.this, voiceUri);
-                    short[] pcm = Effects.applyPreset(voice.samples, voice.sampleRate, presetIndex);
-                    Effects.equalize(pcm, voice.sampleRate, bassDb, midDb, trebleDb);
+                    short[] pcm = processChain(voice.samples, voice.sampleRate);
 
                     if (beatUri != null) {
                         AudioEngine.Clip beat = AudioEngine.decode(StudioActivity.this, beatUri);
@@ -960,8 +1048,7 @@ public class StudioActivity extends Activity {
                             ? java.util.Arrays.copyOf(voice.samples, maxSamples)
                             : voice.samples;
 
-                    short[] pcm = Effects.applyPreset(head, voice.sampleRate, presetIndex);
-                    Effects.equalize(pcm, voice.sampleRate, bassDb, midDb, trebleDb);
+                    short[] pcm = processChain(head, voice.sampleRate);
 
                     if (beatUri != null) {
                         AudioEngine.Clip beat = AudioEngine.decode(StudioActivity.this, beatUri);

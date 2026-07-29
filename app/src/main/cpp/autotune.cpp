@@ -105,7 +105,7 @@ float detectPeriod(const float *x, int n, int sampleRate) {
 } // namespace
 
 extern "C" JNIEXPORT jshortArray JNICALL
-Java_com_sidemic_NativeAudio_autoTune(JNIEnv *env, jclass,
+Java_com_sidemic_NativeAudio_nativeAutoTune(JNIEnv *env, jclass,
                                       jshortArray input, jint sampleRate,
                                       jfloat retune, jint scale, jint key) {
     const jsize n = env->GetArrayLength(input);
@@ -189,7 +189,7 @@ Java_com_sidemic_NativeAudio_autoTune(JNIEnv *env, jclass,
 }
 
 extern "C" JNIEXPORT jfloat JNICALL
-Java_com_sidemic_NativeAudio_detectPitch(JNIEnv *env, jclass,
+Java_com_sidemic_NativeAudio_nativeDetectPitch(JNIEnv *env, jclass,
                                          jshortArray input, jint sampleRate) {
     const jsize n = env->GetArrayLength(input);
     if (n < 2048) return -1.0f;

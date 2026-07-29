@@ -114,11 +114,36 @@ stage_dex() {
         build/classes.jar
 }
 
+stage_native() {
+    # Motor de autotune (app/src/main/cpp) — compilado para as ABIs que cobrem
+    # os aparelhos Android atuais. Sem NDK, o app cai no autotune em Java.
+    local ndk_root="$ANDROID_HOME/ndk"
+    local ndk
+    ndk=$(ls -d "$ndk_root"/* 2>/dev/null | sort -V | tail -1)
+    if [ -z "$ndk" ] || [ ! -d "$ndk" ]; then
+        echo "AVISO: NDK não encontrado em $ndk_root — APK sairá sem libsidemic.so (autotune nativo indisponível)" >&2
+        return 0
+    fi
+    local tc="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
+    mkdir -p build/jni/arm64-v8a build/jni/armeabi-v7a
+    "$tc/aarch64-linux-android29-clang++" -O3 -fPIC -shared -std=c++17 -fvisibility=hidden \
+        -o build/jni/arm64-v8a/libsidemic.so app/src/main/cpp/autotune.cpp -lm
+    "$tc/armv7a-linux-androideabi29-clang++" -O3 -fPIC -shared -std=c++17 -fvisibility=hidden \
+        -o build/jni/armeabi-v7a/libsidemic.so app/src/main/cpp/autotune.cpp -lm
+}
+
 stage_pack() {
     # RESEARCH Q4 — somente APPEND com zip -j; jamais reempacotar a árvore
     # (recomprimiria resources.arsc, que deve ficar Stored — Pitfall 5)
     cp build/base.apk build/unsigned.apk
     (cd build/dex && zip -j ../unsigned.apk classes.dex)
+    # .so entram como lib/<abi>/ preservando o caminho (zip sem -j).
+    # Guardadas sem compressão: o loader mapeia direto do APK (extractNativeLibs=false).
+    if [ -d build/jni ]; then
+        mkdir -p build/libtree/lib
+        cp -r build/jni/* build/libtree/lib/
+        (cd build/libtree && zip -0 -r ../unsigned.apk lib)
+    fi
 }
 
 stage_align() {
@@ -198,6 +223,7 @@ main() {
     stage_link
     stage_compile
     stage_dex
+    stage_native
     stage_pack
     stage_align
     stage_sign
