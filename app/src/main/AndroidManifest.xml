@@ -3,6 +3,11 @@
     package="com.sidemic">
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Somente o Beat Finder usa rede (API do Freesound). A captura é offline. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <queries>
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
@@ -21,6 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".StudioActivity"
+            android:exported="false"
+            android:label="Sidemic Studio" />
+        <service android:name=".RecordingService"
+            android:foregroundServiceType="microphone"
+            android:exported="false" />
         <service android:name=".RecordTileService"
             android:label="Sidemic — capturar"
             android:icon="@android:drawable/ic_btn_speak_now"

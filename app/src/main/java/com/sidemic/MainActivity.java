@@ -471,6 +471,24 @@ public class MainActivity extends Activity {
         });
         root.addView(pickContactBtn, lp(10));
 
+        // ── Studio ──
+        root.addView(rule(), thin(30));
+        root.addView(sectionLabel("Studio"), lp(24));
+
+        TextView studioHint = new TextView(this);
+        studioHint.setText("Voice presets, equaliser and beats — turn a take into a track.");
+        studioHint.setTextSize(12);
+        studioHint.setTextColor(MUTED);
+        root.addView(studioHint, lp(8));
+
+        Button studioBtn = solidButton("Open Studio");
+        studioBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, StudioActivity.class));
+            }
+        });
+        root.addView(studioBtn, lp(12));
+
         // ── Advanced ──
         root.addView(rule(), thin(30));
         root.addView(sectionLabel("Advanced"), lp(24));
@@ -774,6 +792,7 @@ public class MainActivity extends Activity {
         currentUri = uri;
         recording = true;
         recordStartMs = System.currentTimeMillis();
+        startCaptureService();
         recordBtn.setText("Stop");
         recordBtn.setBackground(rect(LIVE, 6, 0));
         recordBtn.setTextColor(PAPER);
@@ -860,8 +879,26 @@ public class MainActivity extends Activity {
         meter.reset();
     }
 
+    /** Foreground service: sem ele o Android 14 corta o mic ao sair da tela. */
+    private void startCaptureService() {
+        try {
+            Intent i = new Intent(this, RecordingService.class);
+            i.setAction(RecordingService.ACTION_START);
+            startForegroundService(i);
+        } catch (Exception ignored) { }
+    }
+
+    private void stopCaptureService() {
+        try {
+            Intent i = new Intent(this, RecordingService.class);
+            i.setAction(RecordingService.ACTION_STOP);
+            startService(i);
+        } catch (Exception ignored) { }
+    }
+
     private void stopRecording(boolean keep) {
         recording = false;
+        stopCaptureService();
         handler.removeCallbacks(meterTick);
         boolean ok = false;
         try {
@@ -1224,9 +1261,37 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        // A gravação NÃO é interrompida aqui: o RecordingService (foreground,
+        // type=microphone) mantém a captura viva com o app fora da tela. Só o
+        // monitor de teste e o playback param — nenhum dos dois deve continuar
+        // consumindo o microfone/alto-falante em background.
         if (monitoring) stopMonitor();
-        if (recording) stopRecording(true);
         stopPlayback();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Voltando à tela com a captura em andamento: recompõe o estado da UI
+        // (cronômetro e medidor) em vez de mostrar "Record" com o mic ativo.
+        if (recording) {
+            recordBtn.setText("Stop");
+            recordBtn.setBackground(rect(LIVE, 6, 0));
+            recordBtn.setTextColor(PAPER);
+            statusText.setText("Recording · " + SOURCE_TITLES[selectedIndex].toLowerCase(Locale.US));
+            statusText.setTextColor(MINT);
+            handler.removeCallbacks(meterTick);
+            handler.post(meterTick);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Fechar o app de vez encerra a captura e libera o serviço.
+        if (recording) stopRecording(true);
+        stopCaptureService();
+        cleanupRecorder();
     }
 
     private void toast(String msg) {
