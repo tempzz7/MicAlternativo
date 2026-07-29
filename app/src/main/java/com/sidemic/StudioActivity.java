@@ -82,6 +82,7 @@ public class StudioActivity extends Activity {
     private Uri beatUri;
     private String beatLabel = "";
     private Uri renderUri;
+    private long awaitingTake = -1;   // _ID de referência ao sair para gravar
 
     private int presetIndex = 0;
     private double bassDb = 0, midDb = 0, trebleDb = 0;
@@ -89,7 +90,8 @@ public class StudioActivity extends Activity {
 
     private TextView voiceSummary, beatSummary, renderStatus;
     private LinearLayout presetBox, beatResults;
-    private Button renderBtn, playRenderBtn, shareRenderBtn;
+    private Button renderBtn, playRenderBtn, shareRenderBtn, previewBtn;
+    private java.io.File previewFile;
     private final List<View> presetRows = new ArrayList<>();
 
     private MediaPlayer preview;
@@ -218,7 +220,20 @@ public class StudioActivity extends Activity {
         root.addView(sectionLabel("1 · Vocal take"), lp(24));
         voiceSummary = summaryBox("No take selected");
         root.addView(voiceSummary, lp(10));
-        Button pickVoice = ghost("Choose a take from the library");
+
+        Button recordVoice = solid("Record now");
+        recordVoice.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { recordNow(); }
+        });
+        root.addView(recordVoice, lp(10));
+
+        Button libraryVoice = ghost("Pick from my Sidemic takes");
+        libraryVoice.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { pickFromLibrary(true); }
+        });
+        root.addView(libraryVoice, lp(8));
+
+        Button pickVoice = ghost("Browse files (Downloads, etc.)");
         pickVoice.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { pickAudio(REQ_PICK_VOICE); }
         });
@@ -266,6 +281,12 @@ public class StudioActivity extends Activity {
         root.addView(presetBox);
         paintPresets();
 
+        previewBtn = ghost("Preview this effect (first 6 s)");
+        previewBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { previewEffect(); }
+        });
+        root.addView(previewBtn, lp(10));
+
         // ── 3. EQ ──
         root.addView(rule(), thin(28));
         root.addView(sectionLabel("3 · Equaliser"), lp(24));
@@ -279,7 +300,13 @@ public class StudioActivity extends Activity {
         beatSummary = summaryBox("No beat — vocal only");
         root.addView(beatSummary, lp(10));
 
-        Button pickBeat = ghost("Import a beat from this phone");
+        Button libraryBeat = ghost("Pick from my Sidemic library");
+        libraryBeat.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { pickFromLibrary(false); }
+        });
+        root.addView(libraryBeat, lp(8));
+
+        Button pickBeat = ghost("Browse files (Downloads, etc.)");
         pickBeat.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { pickAudio(REQ_PICK_BEAT); }
         });
@@ -419,6 +446,141 @@ public class StudioActivity extends Activity {
     }
 
     // ── seleção de arquivos ────────────────────────────────────────────
+
+    /**
+     * Lista o que já está em Music/Sidemic — takes gravados e beats baixados —
+     * sem passar pelo seletor de arquivos do sistema.
+     */
+    private void pickFromLibrary(final boolean forVoice) {
+        final List<Uri> uris = new ArrayList<>();
+        final List<String> labels = new ArrayList<>();
+
+        Cursor c = getContentResolver().query(
+                MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                new String[]{
+                        MediaStore.Audio.Media._ID,
+                        MediaStore.Audio.Media.DISPLAY_NAME,
+                        MediaStore.Audio.Media.DURATION,
+                },
+                MediaStore.Audio.Media.RELATIVE_PATH + " LIKE ? AND "
+                        + MediaStore.Audio.Media.IS_PENDING + "=0",
+                new String[]{REL_PATH + "%"},
+                MediaStore.Audio.Media.DATE_ADDED + " DESC");
+
+        if (c != null) {
+            try {
+                while (c.moveToNext() && uris.size() < 60) {
+                    long id = c.getLong(0);
+                    String name = c.getString(1);
+                    long dur = c.getLong(2) / 1000;
+                    uris.add(android.content.ContentUris.withAppendedId(
+                            MediaStore.Audio.Media.getContentUri(
+                                    MediaStore.VOLUME_EXTERNAL_PRIMARY), id));
+                    labels.add(name + "   " + String.format(Locale.US, "%d:%02d", dur / 60, dur % 60));
+                }
+            } finally {
+                c.close();
+            }
+        }
+
+        if (uris.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Library is empty")
+                    .setMessage("Record a take on the main screen, or use \"Browse files\" to load audio "
+                            + "from Downloads or anywhere else on your phone.")
+                    .setPositiveButton("Close", null)
+                    .show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(forVoice ? "Pick a vocal take" : "Pick a beat")
+                .setItems(labels.toArray(new String[0]),
+                        new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface d, int which) {
+                                Uri u = uris.get(which);
+                                String name = labels.get(which).split("   ")[0];
+                                if (forVoice) {
+                                    voiceUri = u;
+                                    voiceLabel = name;
+                                    voiceSummary.setText(name);
+                                    voiceSummary.setTextColor(PAPER);
+                                } else {
+                                    beatUri = u;
+                                    beatLabel = name;
+                                    beatSummary.setText(name);
+                                    beatSummary.setTextColor(PAPER);
+                                }
+                            }
+                        })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Abre a tela de captura já gravando; ao voltar, o take mais recente da
+     * biblioteca é adotado automaticamente como voz.
+     */
+    private void recordNow() {
+        awaitingTake = latestTakeId();
+        Intent i = new Intent(this, MainActivity.class);
+        i.setAction(MainActivity.ACTION_RECORD_NOW);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(i);
+        toast("Record your take, then come back here");
+    }
+
+    /** Maior _ID em Music/Sidemic — marca d'água para detectar um take novo. */
+    private long latestTakeId() {
+        Cursor c = getContentResolver().query(
+                MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                new String[]{MediaStore.Audio.Media._ID},
+                MediaStore.Audio.Media.RELATIVE_PATH + " LIKE ? AND "
+                        + MediaStore.Audio.Media.IS_PENDING + "=0",
+                new String[]{REL_PATH + "%"},
+                MediaStore.Audio.Media._ID + " DESC");
+        if (c == null) return -1;
+        try {
+            return c.moveToFirst() ? c.getLong(0) : -1;
+        } finally {
+            c.close();
+        }
+    }
+
+    /** Adota o take gravado enquanto o Studio estava em segundo plano. */
+    private void adoptNewTakeIfAny() {
+        if (awaitingTake < 0) return;
+        Cursor c = getContentResolver().query(
+                MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                new String[]{MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DISPLAY_NAME},
+                MediaStore.Audio.Media.RELATIVE_PATH + " LIKE ? AND "
+                        + MediaStore.Audio.Media.IS_PENDING + "=0",
+                new String[]{REL_PATH + "%"},
+                MediaStore.Audio.Media._ID + " DESC");
+        if (c == null) return;
+        try {
+            if (c.moveToFirst()) {
+                long id = c.getLong(0);
+                if (id > awaitingTake) {
+                    voiceUri = android.content.ContentUris.withAppendedId(
+                            MediaStore.Audio.Media.getContentUri(
+                                    MediaStore.VOLUME_EXTERNAL_PRIMARY), id);
+                    voiceLabel = c.getString(1);
+                    voiceSummary.setText(voiceLabel + "  ·  just recorded");
+                    voiceSummary.setTextColor(PAPER);
+                    awaitingTake = -1;
+                }
+            }
+        } finally {
+            c.close();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        adoptNewTakeIfAny();
+    }
 
     private void pickAudio(int req) {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -774,6 +936,91 @@ public class StudioActivity extends Activity {
         });
     }
 
+    /**
+     * Audição rápida: processa só os primeiros segundos com o preset e o EQ
+     * atuais, grava num arquivo de cache e toca. Serve para escolher o efeito
+     * sem esperar o render do take inteiro.
+     */
+    private void previewEffect() {
+        if (voiceUri == null) { toast("Pick or record a take first."); return; }
+        if (preview != null && preview.isPlaying()) { stopPreview(); return; }
+
+        previewBtn.setEnabled(false);
+        previewBtn.setAlpha(0.35f);
+        previewBtn.setText("Preparing preview…");
+
+        pool.execute(new Runnable() {
+            @Override public void run() {
+                String error = null;
+                java.io.File outFile = null;
+                try {
+                    AudioEngine.Clip voice = AudioEngine.decode(StudioActivity.this, voiceUri);
+                    int maxSamples = voice.sampleRate * 6;          // 6 segundos
+                    short[] head = voice.samples.length > maxSamples
+                            ? java.util.Arrays.copyOf(voice.samples, maxSamples)
+                            : voice.samples;
+
+                    short[] pcm = Effects.applyPreset(head, voice.sampleRate, presetIndex);
+                    Effects.equalize(pcm, voice.sampleRate, bassDb, midDb, trebleDb);
+
+                    if (beatUri != null) {
+                        AudioEngine.Clip beat = AudioEngine.decode(StudioActivity.this, beatUri);
+                        pcm = AudioEngine.mix(pcm, voice.sampleRate,
+                                beat.samples, beat.sampleRate, voiceGain, beatGain);
+                    }
+                    AudioEngine.normalize(pcm, 0.95);
+
+                    outFile = new java.io.File(getCacheDir(), "preview.m4a");
+                    if (outFile.exists() && !outFile.delete()) {
+                        throw new java.io.IOException("cache file locked");
+                    }
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
+                    AudioEngine.encodeToM4a(pcm, voice.sampleRate, 128000, fos.getFD());
+                    fos.close();
+                } catch (Throwable t) {
+                    error = "Preview failed: " + t.getClass().getSimpleName();
+                }
+
+                final String err = error;
+                final java.io.File result = outFile;
+                ui.post(new Runnable() {
+                    @Override public void run() {
+                        previewBtn.setEnabled(true);
+                        previewBtn.setAlpha(1f);
+                        if (err != null) {
+                            previewBtn.setText("Preview this effect (first 6 s)");
+                            renderStatus.setText(err);
+                            renderStatus.setTextColor(LIVE);
+                            return;
+                        }
+                        previewFile = result;
+                        playPreviewFile();
+                    }
+                });
+            }
+        });
+    }
+
+    private void playPreviewFile() {
+        if (previewFile == null || !previewFile.exists()) return;
+        stopPreview();
+        try {
+            preview = new MediaPlayer();
+            preview.setDataSource(previewFile.getAbsolutePath());
+            preview.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override public void onCompletion(MediaPlayer mp) {
+                    previewBtn.setText("Preview this effect (first 6 s)");
+                }
+            });
+            preview.prepare();
+            preview.start();
+            previewBtn.setText("Stop preview");
+        } catch (Exception e) {
+            toast("Could not play the preview.");
+            stopPreview();
+        }
+    }
+
     private void togglePreview(Uri uri) {
         if (uri == null) return;
         if (preview != null && preview.isPlaying()) {
@@ -802,7 +1049,10 @@ public class StudioActivity extends Activity {
             try { preview.release(); } catch (Exception ignored) { }
             preview = null;
         }
-        playRenderBtn.setText("Play result");
+        if (playRenderBtn != null) playRenderBtn.setText("Play result");
+        if (previewBtn != null && previewBtn.isEnabled()) {
+            previewBtn.setText("Preview this effect (first 6 s)");
+        }
     }
 
     private void shareRender() {
